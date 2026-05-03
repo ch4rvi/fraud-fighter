@@ -1,7 +1,8 @@
-package my.fraud.demo.Controller;
+package my.fraud.demo.controller;
 
-import my.fraud.demo.Model.DecisionSubjectEvent;
-import my.fraud.demo.Service.DecisionService;
+import my.fraud.demo.model.Decision;
+import my.fraud.demo.model.DecisionSubjectEvent;
+import my.fraud.demo.service.DecisionService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,8 +14,8 @@ public class DecisionController {
             this.decisionService = decisionService;
     }
 
-    @PostMapping(value = "api/fraud")
-    public String getDecision(@RequestBody DecisionSubjectEvent decisionSubjectEvent) {
+    @PostMapping(value = "/api/fraud")
+    public Decision getDecision(@RequestBody DecisionSubjectEvent decisionSubjectEvent) {
         return decisionService.getDecision(decisionSubjectEvent);
     }
 }

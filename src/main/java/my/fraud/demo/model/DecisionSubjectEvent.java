@@ -1,4 +1,4 @@
-package my.fraud.demo.Model;
+package my.fraud.demo.model;
 
 import lombok.Data;
 
