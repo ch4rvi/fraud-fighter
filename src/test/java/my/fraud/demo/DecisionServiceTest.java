@@ -1,5 +1,6 @@
 package my.fraud.demo;
 
+import lombok.extern.log4j.Log4j;
 import my.fraud.demo.enums.DecisionAction;
 import my.fraud.demo.model.Decision;
 import my.fraud.demo.model.DecisionSubjectEvent;

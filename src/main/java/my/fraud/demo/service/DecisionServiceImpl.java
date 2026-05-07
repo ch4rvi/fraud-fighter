@@ -1,10 +1,13 @@
 package my.fraud.demo.service;
 
+import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import my.fraud.demo.enums.DecisionAction;
 import my.fraud.demo.model.Decision;
 import my.fraud.demo.model.DecisionSubjectEvent;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class DecisionServiceImpl implements DecisionService {
 
@@ -13,6 +16,7 @@ public class DecisionServiceImpl implements DecisionService {
 
         Decision decision = new Decision();
         String decisionText;
+
 
         if (decisionSubjectEvent == null) {
             decisionText = "Error: K vydání rozhodnutí chybí předmět posouzení!";
@@ -34,16 +38,17 @@ public class DecisionServiceImpl implements DecisionService {
             }
 
             decisionText = "Received event of type "
-                    + decisionSubjectEvent.getType() + "from "
+                    + decisionSubjectEvent.getType() + " from "
                     + decisionSubjectEvent.getSource() + " to decide. Decision: " + decision.getDecisionAction().toString();
 
             if (decisionSubjectEvent.getType() == null) {
-                decisionText = decisionText + "Warning: Pro přesnější rozhodnutí poskytněte typ operace.";
+                decisionText = decisionText + " Warning: Pro přesnější rozhodnutí poskytněte typ operace.";
             }
         }
 
         decision.setDecisionText(decisionText);
 
+        log.info("Výsledek rozhodnutí {} s komentářem '{}'", decision.getDecisionAction(), decision.getDecisionText());
         return decision;
     }
 }
