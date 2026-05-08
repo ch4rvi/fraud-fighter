@@ -7,4 +7,5 @@ public class DecisionSubjectEvent {
     String name;
     String type;
     String source;
+    Integer amount;
 }

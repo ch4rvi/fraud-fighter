@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class DecisionServiceImpl implements DecisionService {
 
+    private final Integer AMOUNT_TRESHOLD_TO_HOLD = 100000;
+    private final Integer AMOUNT_TRESHOLD_TO_DENY = 200000;
+
     @Override
     public Decision getDecision (DecisionSubjectEvent decisionSubjectEvent) {
 
@@ -22,24 +25,33 @@ public class DecisionServiceImpl implements DecisionService {
             decisionText = "Error: K vydání rozhodnutí chybí předmět posouzení!";
         } else if (decisionSubjectEvent.getSource() == null) {
             decisionText = "Error: K vydání rozhodnutí chybí zdroj!";
+        } else if (decisionSubjectEvent.getAmount() == null) {
+            decisionText = "Error: K vydání rozhodnutí chybí částka!";
         } else if (!decisionSubjectEvent.getSource().equalsIgnoreCase("branch")
                 && !decisionSubjectEvent.getSource().equalsIgnoreCase("atm")
                 && !decisionSubjectEvent.getSource().equalsIgnoreCase("george")) {
             decisionText = "Error: Neznámá hodnota source!";
+        } else if (decisionSubjectEvent.getAmount() < 0) {
+            decisionText = "Error: Částka nesmí být záporná!";
         } else { //TODO: tohle přepsat na switch (kata)
-            if (decisionSubjectEvent.getSource().equalsIgnoreCase("branch")) {
-                decision.setDecisionAction(DecisionAction.HOLD);
-            }
-            if (decisionSubjectEvent.getSource().equalsIgnoreCase("atm")) {
-                decision.setDecisionAction(DecisionAction.DENY);
-            }
-            if (decisionSubjectEvent.getSource().equalsIgnoreCase("george")) {
+            if (decisionSubjectEvent.getSource().equalsIgnoreCase("george")
+                    && decisionSubjectEvent.getAmount() <= AMOUNT_TRESHOLD_TO_HOLD) {
                 decision.setDecisionAction(DecisionAction.ALLOW);
             }
-
-            decisionText = "Received event of type "
-                    + decisionSubjectEvent.getType() + " from "
-                    + decisionSubjectEvent.getSource() + " to decide. Decision: " + decision.getDecisionAction().toString();
+            if (decisionSubjectEvent.getSource().equalsIgnoreCase("branch")
+                    || decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_HOLD) {
+                decision.setDecisionAction(DecisionAction.HOLD);
+            }
+            if (decisionSubjectEvent.getSource().equalsIgnoreCase("atm")
+                    || decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_DENY
+                    || (decisionSubjectEvent.getSource().equalsIgnoreCase("branch")
+                        && decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_HOLD)) {
+                decision.setDecisionAction(DecisionAction.DENY);
+            }
+            decisionText = "Received event at the amount of " + decisionSubjectEvent.getAmount().toString()
+                    + " of type " + decisionSubjectEvent.getType()
+                    + " from " + decisionSubjectEvent.getSource()
+                    + " to decide. Decision: " + decision.getDecisionAction().toString();
 
             if (decisionSubjectEvent.getType() == null) {
                 decisionText = decisionText + " Warning: Pro přesnější rozhodnutí poskytněte typ operace.";

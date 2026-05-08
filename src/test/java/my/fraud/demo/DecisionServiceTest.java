@@ -1,6 +1,5 @@
 package my.fraud.demo;
 
-import lombok.extern.log4j.Log4j;
 import my.fraud.demo.enums.DecisionAction;
 import my.fraud.demo.model.Decision;
 import my.fraud.demo.model.DecisionSubjectEvent;
@@ -14,7 +13,8 @@ public class DecisionServiceTest {
 
     private final DecisionService decisionService = new DecisionServiceImpl();
 
-    @Test void getDecisionReturnsNullMessageWhenInputNull() {
+    @Test
+    void getDecisionReturnsNullMessageWhenInputNull() {
         DecisionSubjectEvent decisionSubjectEvent = null;
 
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
@@ -23,7 +23,8 @@ public class DecisionServiceTest {
         assertEquals("Error: K vydání rozhodnutí chybí předmět posouzení!", decision.getDecisionText());
     }
 
-    @Test void getDecisionReturnsMessageWhenMissingSource() {
+    @Test
+    void getDecisionReturnsMessageWhenMissingSource() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
         decisionSubjectEvent.setName("lol");
         decisionSubjectEvent.setSource(null);
@@ -34,9 +35,23 @@ public class DecisionServiceTest {
         assertEquals("Error: K vydání rozhodnutí chybí zdroj!", decision.getDecisionText());
     }
 
-    @Test void getDecisionReturnsMessageWhenUnknownSource() {
+    @Test
+    void getDecisionMessageWhenUnknownAmount() {
+        DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
+        decisionSubjectEvent.setSource("branch");
+        decisionSubjectEvent.setAmount(null);
+
+        Decision decision = decisionService.getDecision(decisionSubjectEvent);
+
+        assertNull(decision.getDecisionAction());
+        assertEquals("Error: K vydání rozhodnutí chybí částka!", decision.getDecisionText());
+    }
+
+    @Test
+    void getDecisionReturnsMessageWhenUnknownSource() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
         decisionSubjectEvent.setName("name");
+        decisionSubjectEvent.setAmount(0);
         decisionSubjectEvent.setSource("unknown_source");
 
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
@@ -46,9 +61,43 @@ public class DecisionServiceTest {
     }
 
     @Test
+    void getDecisionReturnsMessageWhenNegativeAmount() {
+        DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
+        decisionSubjectEvent.setSource("Branch");
+        decisionSubjectEvent.setAmount(-1);
+
+        Decision decision = decisionService.getDecision(decisionSubjectEvent);
+
+        assertEquals("Error: Částka nesmí být záporná!", decision.getDecisionText());
+    }
+
+    @Test
+    void getDecisionWhenSourceGeorgeTest() {
+        DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
+        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setAmount(0);
+
+        Decision decision = decisionService.getDecision(decisionSubjectEvent);
+
+        assertEquals(DecisionAction.ALLOW.name(), String.valueOf(decision.getDecisionAction()));
+    }
+
+    @Test
     void getDecisionWhenSourceBranchTest() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
         decisionSubjectEvent.setSource("Branch");
+        decisionSubjectEvent.setAmount(0);
+
+        Decision decision = decisionService.getDecision(decisionSubjectEvent);
+
+        assertEquals(DecisionAction.HOLD.name(), String.valueOf(decision.getDecisionAction()));
+    }
+
+    @Test
+    void getDecisionWhenSourceGeorgeAndAmountOver() {
+        DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
+        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setAmount(101000);
 
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
@@ -59,6 +108,7 @@ public class DecisionServiceTest {
     void getDecisionWhenSourceAtmTest() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
         decisionSubjectEvent.setSource("ATM");
+        decisionSubjectEvent.setAmount(0);
 
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
@@ -66,13 +116,25 @@ public class DecisionServiceTest {
     }
 
     @Test
-    void getDecisionWhenSourceGeorgeTest() {
+    void getDecisionWhenAmountOverTwoHundred() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setSource("branch");
+        decisionSubjectEvent.setAmount(201000);
 
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
-        assertEquals(DecisionAction.ALLOW.name(), String.valueOf(decision.getDecisionAction()));
+        assertEquals(DecisionAction.DENY.name(), String.valueOf(decision.getDecisionAction()));
+    }
+
+    @Test
+    void getDecisionWhenAmountOverOneHundrerAndSourceBranch() {
+        DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
+        decisionSubjectEvent.setSource("branch");
+        decisionSubjectEvent.setAmount(101000);
+
+        Decision decision = decisionService.getDecision(decisionSubjectEvent);
+
+        assertEquals(DecisionAction.DENY.name(), String.valueOf(decision.getDecisionAction()));
     }
 
     @Test
@@ -80,6 +142,7 @@ public class DecisionServiceTest {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
         decisionSubjectEvent.setSource("George");
         decisionSubjectEvent.setType(null);
+        decisionSubjectEvent.setAmount(0);
 
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
@@ -91,6 +154,7 @@ public class DecisionServiceTest {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
         decisionSubjectEvent.setSource("George");
         decisionSubjectEvent.setType("trx");
+        decisionSubjectEvent.setAmount(0);
 
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
