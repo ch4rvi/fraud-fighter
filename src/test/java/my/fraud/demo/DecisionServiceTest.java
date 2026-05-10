@@ -20,7 +20,7 @@ public class DecisionServiceTest {
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
         assertNull(decision.getDecisionAction());
-        assertEquals("Error: K vydání rozhodnutí chybí předmět posouzení!", decision.getDecisionText());
+        assertEquals("Error: K vydání rozhodnutí chybí předmět posouzení!", decision.getInvalidSubjectMessage());
     }
 
     @Test
@@ -32,7 +32,7 @@ public class DecisionServiceTest {
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
         assertNull(decision.getDecisionAction());
-        assertEquals("Error: K vydání rozhodnutí chybí zdroj!", decision.getDecisionText());
+        assertEquals("Error: K vydání rozhodnutí chybí zdroj!", decision.getInvalidSubjectMessage());
     }
 
     @Test
@@ -44,7 +44,7 @@ public class DecisionServiceTest {
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
         assertNull(decision.getDecisionAction());
-        assertEquals("Error: K vydání rozhodnutí chybí částka!", decision.getDecisionText());
+        assertEquals("Error: K vydání rozhodnutí chybí částka!", decision.getInvalidSubjectMessage());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class DecisionServiceTest {
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
         assertNull(decision.getDecisionAction());
-        assertEquals("Error: Neznámá hodnota source!", decision.getDecisionText());
+        assertEquals("Error: Neznámá hodnota source!", decision.getInvalidSubjectMessage());
     }
 
     @Test
@@ -68,7 +68,7 @@ public class DecisionServiceTest {
 
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
-        assertEquals("Error: Částka nesmí být záporná!", decision.getDecisionText());
+        assertEquals("Error: Částka nesmí být záporná!", decision.getInvalidSubjectMessage());
     }
 
     @Test

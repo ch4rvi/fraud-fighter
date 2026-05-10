@@ -7,4 +7,7 @@ import my.fraud.demo.enums.DecisionAction;
 public class Decision {
      DecisionAction decisionAction;
      String decisionText;
+     String invalidSubjectMessage;
+     boolean isSubjectValidToDecide;
+
 }
