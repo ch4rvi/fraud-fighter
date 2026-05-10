@@ -20,5 +20,6 @@ public class DecisionController {
     public Decision getDecision(@RequestBody DecisionSubjectEvent decisionSubjectEvent) {
         log.info("Volání žádosti o rozhodnutí o {}", decisionSubjectEvent);
         return decisionService.getDecision(decisionSubjectEvent);
+
     }
 }
