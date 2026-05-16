@@ -31,6 +31,12 @@ public class DecisionController {
             throw new DecisionException("Neznámá hodnota source!");
         } else if (decisionSubjectEvent.getAmount() < 0) {
             throw new DecisionException("Částka nesmí být záporná!");
+        } else if (decisionSubjectEvent.getDebtorAccount() == null) {
+            throw new DecisionException("Chybí údaje pro účet odesilatele!");
+        } else if (decisionSubjectEvent.getDebtorAccount().getAccountNumber() == null) {
+            throw new DecisionException("Chybí číslo účtu odesilatele!");
+        } else if (decisionSubjectEvent.getDebtorAccount().getBankCode() == null) {
+            throw new DecisionException("Chybí kód banky!");
         } else {
             log.info("Volání žádosti o rozhodnutí o {}", decisionSubjectEvent);
             return decisionService.getDecision(decisionSubjectEvent);

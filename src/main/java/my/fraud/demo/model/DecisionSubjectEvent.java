@@ -8,4 +8,5 @@ public class DecisionSubjectEvent {
     String type;
     String source;
     Integer amount;
+    Account debtorAccount;
 }
