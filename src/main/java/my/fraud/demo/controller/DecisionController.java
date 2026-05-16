@@ -1,6 +1,7 @@
 package my.fraud.demo.controller;
 import lombok.extern.slf4j.Slf4j;
 import my.fraud.demo.model.Decision;
+import my.fraud.demo.model.DecisionException;
 import my.fraud.demo.model.DecisionSubjectEvent;
 import my.fraud.demo.service.DecisionService;
 import org.springframework.web.bind.annotation.*;
@@ -21,15 +22,15 @@ public class DecisionController {
     @PostMapping(value = "/api/fraud")
     public Decision getDecision(@RequestBody DecisionSubjectEvent decisionSubjectEvent) throws Exception {
         if (decisionSubjectEvent == null) {
-            throw new Exception("K vydání rozhodnutí chybí předmět posouzení!");
+            throw new DecisionException("K vydání rozhodnutí chybí předmět posouzení!");
         } else if (decisionSubjectEvent.getSource() == null) {
-            throw new Exception("K vydání rozhodnutí chybí zdroj!");
+            throw new DecisionException("K vydání rozhodnutí chybí zdroj!");
         } else if (decisionSubjectEvent.getAmount() == null) {
-            throw new Exception("K vydání rozhodnutí chybí částka!");
+            throw new DecisionException("K vydání rozhodnutí chybí částka!");
         } else if (!ALLOWED_SOURCES.contains(decisionSubjectEvent.getSource().toLowerCase())) {
-            throw new Exception("Neznámá hodnota source!");
+            throw new DecisionException("Neznámá hodnota source!");
         } else if (decisionSubjectEvent.getAmount() < 0) {
-            throw new Exception("Částka nesmí být záporná!");
+            throw new DecisionException("Částka nesmí být záporná!");
         } else {
             log.info("Volání žádosti o rozhodnutí o {}", decisionSubjectEvent);
             return decisionService.getDecision(decisionSubjectEvent);
