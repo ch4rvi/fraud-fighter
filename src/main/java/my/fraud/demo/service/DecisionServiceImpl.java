@@ -3,10 +3,7 @@ package my.fraud.demo.service;
 import lombok.extern.slf4j.Slf4j;
 import my.fraud.demo.enums.AccountRiskLevel;
 import my.fraud.demo.enums.DecisionAction;
-import my.fraud.demo.model.Account;
-import my.fraud.demo.model.AccountWatchlistEntry;
-import my.fraud.demo.model.Decision;
-import my.fraud.demo.model.DecisionSubjectEvent;
+import my.fraud.demo.model.*;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,27 +30,31 @@ public class DecisionServiceImpl implements DecisionService {
 
     @Override
     public Decision getDecision (DecisionSubjectEvent decisionSubjectEvent) {
-
-        Decision decision = new Decision();
-        return makeDecision(decisionSubjectEvent, decision);
+        try {
+            Decision decision = new Decision();
+            return makeDecision(decisionSubjectEvent, decision);
+        } catch (DecisionException e) {
+            log.info(e.getMessage());
+            return null;
+        }
     }
 
-    private Decision makeDecision(DecisionSubjectEvent decisionSubjectEvent, Decision decision) {
-        if (decisionSubjectEvent.getSource().equalsIgnoreCase("george")
-                && decisionSubjectEvent.getAmount() <= AMOUNT_TRESHOLD_TO_HOLD
+    private Decision makeDecision(DecisionSubjectEvent decisionSubjectEvent, Decision decision) throws DecisionException{
+        if (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.ALLOW
+                && getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.ALLOW
                 && getDecisionActionForAccount(decisionSubjectEvent, accountWatchlist) == DecisionAction.ALLOW) {
             decision.setDecisionAction(DecisionAction.ALLOW);
         }
-        if (decisionSubjectEvent.getSource().equalsIgnoreCase("branch")
-                || decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_HOLD
+        if (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.HOLD
+                || getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.HOLD
                 || getDecisionActionForAccount(decisionSubjectEvent, accountWatchlist) == DecisionAction.HOLD) {
             decision.setDecisionAction(DecisionAction.HOLD);
         }
-        if (decisionSubjectEvent.getSource().equalsIgnoreCase("atm")
-                || decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_DENY
+        if (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.DENY
+                || getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.DENY
                 || getDecisionActionForAccount(decisionSubjectEvent, accountWatchlist) == DecisionAction.DENY
-                || (decisionSubjectEvent.getSource().equalsIgnoreCase("branch")
-                && decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_HOLD)) {
+                || (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.HOLD
+                && getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.HOLD)) {
             decision.setDecisionAction(DecisionAction.DENY);
         }
 
@@ -63,8 +64,33 @@ public class DecisionServiceImpl implements DecisionService {
         return decision;
     }
 
-    private DecisionAction getDecisionActionForAccount(DecisionSubjectEvent decisionSubjectEvent, List<AccountWatchlistEntry> accountWatchlist) {
+    private DecisionAction getDecisionActionForAmount(DecisionSubjectEvent decisionSubjectEvent) throws DecisionException{
+        if (decisionSubjectEvent.getAmount() <= AMOUNT_TRESHOLD_TO_HOLD) {
+            return DecisionAction.ALLOW;
+        }
+        if (decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_HOLD) {
+            return DecisionAction.HOLD;
+        }
+        if (decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_DENY) {
+            return DecisionAction.DENY;
+        }
+        throw new DecisionException("Hodnotě amount neodpovídá žádná DecisionAction.");
+    }
 
+    private DecisionAction getDecisionActionForSource(DecisionSubjectEvent decisionSubjectEvent) throws DecisionException{
+        if (decisionSubjectEvent.getSource().equalsIgnoreCase("george")) {
+            return DecisionAction.ALLOW;
+        }
+        if (decisionSubjectEvent.getSource().equalsIgnoreCase("atm")) {
+            return DecisionAction.HOLD;
+        }
+        if (decisionSubjectEvent.getSource().equalsIgnoreCase("branch")) {
+            return DecisionAction.DENY;
+        }
+        throw new DecisionException("Hodnotě source neodpovídá žádná DecisionAction.");
+    }
+
+    private DecisionAction getDecisionActionForAccount(DecisionSubjectEvent decisionSubjectEvent, List<AccountWatchlistEntry> accountWatchlist) throws DecisionException {
         if (decisionSubjectEvent == null) {
             return null;
         }
@@ -85,7 +111,7 @@ public class DecisionServiceImpl implements DecisionService {
                 && account.getBankCode().equals(accountWatchlistEntry.getAccountOnWatch().getBankCode());
     }
 
-    private DecisionAction getDecisionActionForRiskLevel(AccountWatchlistEntry accountWatchlistEntry) {
+    private DecisionAction getDecisionActionForRiskLevel(AccountWatchlistEntry accountWatchlistEntry) throws DecisionException{
         if (accountWatchlistEntry.getAccountRiskLevel() == AccountRiskLevel.LOW) {
             return DecisionAction.ALLOW;
         } else if (accountWatchlistEntry.getAccountRiskLevel() == AccountRiskLevel.MEDIUM) {
@@ -93,7 +119,7 @@ public class DecisionServiceImpl implements DecisionService {
         } else if (accountWatchlistEntry.getAccountRiskLevel() == AccountRiskLevel.HIGH) {
             return DecisionAction.DENY;
         }
-        return null;
+        throw new DecisionException("Hodnotě account neodpovídá žádná DecisionAction.");
     }
 
     private String createDecisionText(DecisionSubjectEvent decisionSubjectEvent, Decision decision) {
