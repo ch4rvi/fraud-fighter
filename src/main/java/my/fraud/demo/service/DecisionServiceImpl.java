@@ -65,14 +65,14 @@ public class DecisionServiceImpl implements DecisionService {
     }
 
     private DecisionAction getDecisionActionForAmount(DecisionSubjectEvent decisionSubjectEvent) throws DecisionException{
-        if (decisionSubjectEvent.getAmount() <= AMOUNT_TRESHOLD_TO_HOLD) {
-            return DecisionAction.ALLOW;
+        if (decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_DENY) {
+            return DecisionAction.DENY;
         }
         if (decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_HOLD) {
             return DecisionAction.HOLD;
         }
-        if (decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_DENY) {
-            return DecisionAction.DENY;
+        if (decisionSubjectEvent.getAmount() <= AMOUNT_TRESHOLD_TO_HOLD) {
+            return DecisionAction.ALLOW;
         }
         throw new DecisionException("Hodnotě amount neodpovídá žádná DecisionAction.");
     }
@@ -81,10 +81,10 @@ public class DecisionServiceImpl implements DecisionService {
         if (decisionSubjectEvent.getSource().equalsIgnoreCase("george")) {
             return DecisionAction.ALLOW;
         }
-        if (decisionSubjectEvent.getSource().equalsIgnoreCase("atm")) {
+        if (decisionSubjectEvent.getSource().equalsIgnoreCase("branch")) {
             return DecisionAction.HOLD;
         }
-        if (decisionSubjectEvent.getSource().equalsIgnoreCase("branch")) {
+        if (decisionSubjectEvent.getSource().equalsIgnoreCase("atm")) {
             return DecisionAction.DENY;
         }
         throw new DecisionException("Hodnotě source neodpovídá žádná DecisionAction.");
