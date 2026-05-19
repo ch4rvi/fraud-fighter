@@ -91,63 +91,57 @@ public class DecisionServiceTest {
 
         assertEquals(DecisionAction.DENY.name(), String.valueOf(decision.getDecisionAction()));
     }
-/*
-    @Test
-    void getDecisionWhenSourceAtmTest() {
-        DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("ATM");
-        decisionSubjectEvent.setAmount(0);
-
-        Decision decision = decisionService.getDecision(decisionSubjectEvent);
-
-        assertEquals(DecisionAction.DENY.name(), String.valueOf(decision.getDecisionAction()));
-    }
 
     @Test
-    void getDecisionWhenAmountOverTwoHundred() {
-        DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("branch");
-        decisionSubjectEvent.setAmount(201000);
-
-        Decision decision = decisionService.getDecision(decisionSubjectEvent);
-
-        assertEquals(DecisionAction.DENY.name(), String.valueOf(decision.getDecisionAction()));
-    }
-
-    @Test
-    void getDecisionWhenAmountOverOneHundrerAndSourceBranch() {
-        DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("branch");
-        decisionSubjectEvent.setAmount(101000);
-
-        Decision decision = decisionService.getDecision(decisionSubjectEvent);
-
-        assertEquals(DecisionAction.DENY.name(), String.valueOf(decision.getDecisionAction()));
-    }
-
-    @Test
-    void getDecisionWarningWhenMissingType() {
+    void getDecisionReturnsAllowWhenAccountNotOnWatchlist() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
         decisionSubjectEvent.setSource("George");
-        decisionSubjectEvent.setType(null);
-        decisionSubjectEvent.setAmount(0);
+        decisionSubjectEvent.setAmount(1);
+        Account debtorAccount = new Account("111", "0100");
+        decisionSubjectEvent.setDebtorAccount(debtorAccount);
 
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
-        assertTrue(decision.getDecisionText().contains("Warning: Pro přesnější rozhodnutí poskytněte typ operace."));
+        assertEquals(DecisionAction.ALLOW, decision.getDecisionAction());
     }
 
     @Test
-    void getDecisionWithoutWarningWhenFilledType() {
+    void getDecisionReturnsAllowWhenAccountOnWatchlistLowRisk() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
         decisionSubjectEvent.setSource("George");
-        decisionSubjectEvent.setType("trx");
-        decisionSubjectEvent.setAmount(0);
+        decisionSubjectEvent.setAmount(1);
+        Account debtorAccount = new Account("123", "0100");
+        decisionSubjectEvent.setDebtorAccount(debtorAccount);
 
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
 
-        assertFalse(decision.getDecisionText().contains("Warning: Pro přesnější rozhodnutí poskytněte typ operace."));
+        assertEquals(DecisionAction.ALLOW, decision.getDecisionAction());
+    }
 
-    }*/
+    @Test
+    void getDecisionReturnsHoldWhenAccountOnWatchlistMediumRisk() {
+        DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
+        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setAmount(1);
+        Account debtorAccount = new Account("456", "0200");
+        decisionSubjectEvent.setDebtorAccount(debtorAccount);
+
+        Decision decision = decisionService.getDecision(decisionSubjectEvent);
+
+        assertEquals(DecisionAction.HOLD, decision.getDecisionAction());
+    }
+
+    @Test
+    void getDecisionReturnsDenyWhenAccountOnWatchlistHighRisk() {
+        DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
+        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setAmount(1);
+        Account debtorAccount = new Account("789", "0300");
+        decisionSubjectEvent.setDebtorAccount(debtorAccount);
+
+        Decision decision = decisionService.getDecision(decisionSubjectEvent);
+
+        assertEquals(DecisionAction.DENY, decision.getDecisionAction());
+    }
 
 }
