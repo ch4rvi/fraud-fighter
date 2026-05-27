@@ -6,6 +6,7 @@ import my.fraud.demo.enums.DecisionAction;
 import my.fraud.demo.model.*;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,17 +17,14 @@ public class DecisionServiceImpl implements DecisionService {
     private final Integer AMOUNT_TRESHOLD_TO_HOLD = 100000;
     private final Integer AMOUNT_TRESHOLD_TO_DENY = 200000;
 
-    private final Account accountA = new Account("123", "0100");
-    private final Account accountB = new Account("456", "0200");
-    private final Account accountC = new Account("789", "0300");
+    private List<AccountWatchlistEntry> accountWatchlist = new ArrayList<>();
 
-    private final AccountWatchlistEntry entryA = new AccountWatchlistEntry(accountA, AccountRiskLevel.LOW);
-    private final AccountWatchlistEntry entryB = new AccountWatchlistEntry(accountB, AccountRiskLevel.MEDIUM);
-    private final AccountWatchlistEntry entryC = new AccountWatchlistEntry(accountC, AccountRiskLevel.HIGH);
-
-    private final List<AccountWatchlistEntry> accountWatchlist = List.of(entryA, entryB, entryC);
-
-
+    @Override
+    public void addAccountToWatchlist (AccountWatchlistEntry accountWatchlistEntry) {
+        log.info("To save {}", accountWatchlistEntry);
+        accountWatchlist.add(accountWatchlistEntry);
+        log.info("Stav watchlistu po přidání {}", accountWatchlist);
+    }
 
     @Override
     public Decision getDecision (DecisionSubjectEvent decisionSubjectEvent) {
