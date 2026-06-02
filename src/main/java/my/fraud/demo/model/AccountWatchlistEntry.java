@@ -12,7 +12,10 @@ public class AccountWatchlistEntry {
     private AccountRiskLevel accountRiskLevel;
     private String id;
     private Date createdAt;
-    private String username;
+    private Date modifiedAt;
+    private String owner;
+    private String modifiedBy;
+    private boolean active;
 
 
     public AccountWatchlistEntry(Account accountOnWatch, AccountRiskLevel accountRiskLevel) {

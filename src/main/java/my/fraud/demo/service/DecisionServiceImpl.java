@@ -27,6 +27,7 @@ public class DecisionServiceImpl implements DecisionService {
     public void addAccountToWatchlist(AccountWatchlistEntry accountWatchlistEntry) {
         accountWatchlistEntry.setId(generateWatchlistEntryId());
         accountWatchlistEntry.setCreatedAt(new Date());
+        accountWatchlistEntry.setActive(true);
 
         log.info("To save {}", accountWatchlistEntry);
         accountWatchlist.add(accountWatchlistEntry);
@@ -65,6 +66,37 @@ public class DecisionServiceImpl implements DecisionService {
             zeroPrefix = zeroPrefix + "0";
         }
         return zeroPrefix;
+    }
+
+    @Override
+    public void modifyAccountStatus(AccountWatchlistModifyRequest accountWatchlistModifyRequest) {
+        accountWatchlist.forEach(entry -> {
+            if (filterWatchlistEntryByIdOrAccount(entry, accountWatchlistModifyRequest)) {
+                log.info("Modifikuju stav pro záznam {}", entry);
+                modifyAccountWatchlistEntry(entry, accountWatchlistModifyRequest);
+            }
+        });
+        log.info("Stav watchlistu po modifikaci {}", accountWatchlist);
+    }
+
+    private void modifyAccountWatchlistEntry(AccountWatchlistEntry accountWatchlistEntry,AccountWatchlistModifyRequest accountWatchlistModifyRequest) {
+        accountWatchlistEntry.setActive(accountWatchlistModifyRequest.isActive());
+        accountWatchlistEntry.setModifiedAt(new Date());
+        accountWatchlistEntry.setModifiedBy(accountWatchlistModifyRequest.getModifiedBy());
+    }
+
+    public boolean filterWatchlistEntryByIdOrAccount(AccountWatchlistEntry accountWatchlistEntry, AccountWatchlistModifyRequest accountWatchlistModifyRequest) {
+        return isMatchingId(accountWatchlistEntry, accountWatchlistModifyRequest)
+                || isMatchingAccount(accountWatchlistEntry, accountWatchlistModifyRequest);
+    }
+
+    private boolean isMatchingId(AccountWatchlistEntry accountWatchlistEntry, AccountWatchlistModifyRequest accountWatchlistModifyRequest) {
+        return accountWatchlistEntry.getId().equals(accountWatchlistModifyRequest.getId());
+    }
+
+    private boolean isMatchingAccount(AccountWatchlistEntry accountWatchlistEntry, AccountWatchlistModifyRequest accountWatchlistModifyRequest) {
+        return (accountWatchlistEntry.getAccountOnWatch().getAccountNumber().equals(accountWatchlistModifyRequest.getAccountToModify().getAccountNumber())
+                && (accountWatchlistEntry.getAccountOnWatch().getBankCode().equals(accountWatchlistModifyRequest.getAccountToModify().getBankCode())));
     }
 
     @Override
