@@ -1,10 +1,9 @@
 package my.fraud.demo.service;
 
 
-import my.fraud.demo.model.AccountWatchlistEntry;
-import my.fraud.demo.model.AccountWatchlistModifyRequest;
-import my.fraud.demo.model.Decision;
-import my.fraud.demo.model.DecisionSubjectEvent;
+import my.fraud.demo.model.*;
+
+import java.util.Optional;
 
 public interface DecisionService {
 
@@ -13,5 +12,7 @@ public interface DecisionService {
     void addAccountToWatchlist(AccountWatchlistEntry accountWatchlistEntry);
 
     void modifyAccountStatus(AccountWatchlistModifyRequest accountWatchlistModifyRequest);
+
+    Optional<AccountWatchlistEntry> getWatchlistEntry(GetWatchlistEntryRequest getWatchlistEntryRequest);
 
 }

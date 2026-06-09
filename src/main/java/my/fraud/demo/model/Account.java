@@ -8,9 +8,4 @@ public class Account {
     String accountNumber;
     String bankCode;
 
-    public Account(String accountNumber, String bankCode) {
-        this.accountNumber = accountNumber;
-        this.bankCode = bankCode;
-    }
-
 }

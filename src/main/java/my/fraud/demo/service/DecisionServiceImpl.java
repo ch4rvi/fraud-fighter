@@ -204,4 +204,30 @@ public class DecisionServiceImpl implements DecisionService {
         }
         return decisionText;
     }
+
+    @Override
+    public Optional<AccountWatchlistEntry> getWatchlistEntry(GetWatchlistEntryRequest getWatchlistEntryRequest) {
+        return accountWatchlist.stream()
+                .filter(entry -> isMatchingAccountOrEntryId(entry, getWatchlistEntryRequest))
+                .findFirst();
+    }
+
+    private boolean isMatchingAccountOrEntryId(AccountWatchlistEntry accountWatchlistEntry, GetWatchlistEntryRequest getWatchlistEntryRequest) {
+        return (isMatchingAccountWatchlistEntryId(accountWatchlistEntry, getWatchlistEntryRequest)
+                || isMatchingAccount(accountWatchlistEntry, getWatchlistEntryRequest));
+    }
+
+    private boolean isMatchingAccountWatchlistEntryId(AccountWatchlistEntry accountWatchlistEntry, GetWatchlistEntryRequest getWatchlistEntryRequest) {
+        return accountWatchlistEntry.getId().equals(getWatchlistEntryRequest.getId());
+    }
+
+    private boolean isMatchingAccount(AccountWatchlistEntry accountWatchlistEntry, GetWatchlistEntryRequest getWatchlistEntryRequest) {
+        return (accountWatchlistEntry.getAccountOnWatch().getAccountNumber().equals(getWatchlistEntryRequest.getAccount().getAccountNumber())
+        || accountWatchlistEntry.getAccountOnWatch().getBankCode().equals(getWatchlistEntryRequest.getAccount().getBankCode()));
+    }
+
+
+
+
+
 }
