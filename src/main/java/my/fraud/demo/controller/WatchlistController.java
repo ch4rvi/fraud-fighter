@@ -2,7 +2,7 @@ package my.fraud.demo.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import my.fraud.demo.model.*;
-import my.fraud.demo.service.DecisionService;
+import my.fraud.demo.service.WatchlistService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,16 +14,16 @@ import java.util.Optional;
 @RestController
 public class WatchlistController {
 
-    public WatchlistController(DecisionService decisionService) {
-        this.decisionService = decisionService;
-    }
+    private final WatchlistService watchlistService;
 
-    private final DecisionService decisionService;
+    public WatchlistController(WatchlistService watchlistService) {
+        this.watchlistService = watchlistService;
+    }
 
     @PostMapping("/api/fraud/watchlist/add")
     public void addAccount(@RequestBody AccountWatchlistEntry accountWatchlistEntry) {
         log.info("Voláme add account s {}", accountWatchlistEntry);
-        decisionService.addAccountToWatchlist(accountWatchlistEntry);
+        watchlistService.addAccountToWatchlist(accountWatchlistEntry);
     }
 
     @PostMapping("/api/fraud/watchlist/modify")
@@ -47,21 +47,21 @@ public class WatchlistController {
             account.setBankCode(accountWatchlistModifyRequest.getAccountToModify().getBankCode());
             getWatchlistEntryRequest.setAccount(account);
         }
-        Optional<AccountWatchlistEntry> foundWatchlistEntry = decisionService.getWatchlistEntry(getWatchlistEntryRequest);
+        Optional<AccountWatchlistEntry> foundWatchlistEntry = watchlistService.getWatchlistEntry(getWatchlistEntryRequest);
         if (foundWatchlistEntry.isEmpty()) {
             throw new WatchlistException("No matching etnr found for this id or account.");
         }
         if (foundWatchlistEntry.get().isActive() == accountWatchlistModifyRequest.isActive()) {
             throw new WatchlistException("Cannot proceed. Entry is of the same status as the request.");
         }
-        decisionService.modifyAccountStatus(accountWatchlistModifyRequest);
+        watchlistService.modifyAccountStatus(accountWatchlistModifyRequest);
 
     }
 
     @GetMapping("/api/fraud/watchlist/get")
     public AccountWatchlistEntry getWatchlistEntry(@RequestBody GetWatchlistEntryRequest getWatchlistEntryRequest) throws WatchlistException {
         log.info("Volání watchlist get s {}", getWatchlistEntryRequest);
-        Optional<AccountWatchlistEntry> foundWatchlistEntry = decisionService.getWatchlistEntry(getWatchlistEntryRequest);
+        Optional<AccountWatchlistEntry> foundWatchlistEntry = watchlistService.getWatchlistEntry(getWatchlistEntryRequest);
         log.info("Volání watchlist get s výsledkem {}", foundWatchlistEntry);
         if (foundWatchlistEntry.isEmpty()) {
             throw new WatchlistException("No matching entry found for this id or account.");
