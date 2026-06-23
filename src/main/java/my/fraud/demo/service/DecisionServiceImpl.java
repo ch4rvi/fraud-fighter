@@ -16,7 +16,7 @@ public class DecisionServiceImpl implements DecisionService {
 
     private WatchlistService watchlistService;
 
-    DecisionServiceImpl(WatchlistService watchlistService) {
+    public DecisionServiceImpl(WatchlistService watchlistService) {
         this.watchlistService = watchlistService;
     }
 

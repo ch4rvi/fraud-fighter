@@ -21,8 +21,12 @@ public class WatchlistController {
     }
 
     @PostMapping("/api/fraud/watchlist/add")
-    public void addAccount(@RequestBody AccountWatchlistEntry accountWatchlistEntry) {
+    public void addAccount(@RequestBody AccountWatchlistEntry accountWatchlistEntry) throws WatchlistException{
         log.info("Voláme add account s {}", accountWatchlistEntry);
+        if (accountWatchlistEntry.getOwner() == null) {
+            throw new WatchlistException("Owner is missing. Add to watchlist request is not valid.");
+        }
+
         watchlistService.addAccountToWatchlist(accountWatchlistEntry);
     }
 
@@ -49,7 +53,7 @@ public class WatchlistController {
         }
         Optional<AccountWatchlistEntry> foundWatchlistEntry = watchlistService.getWatchlistEntry(getWatchlistEntryRequest);
         if (foundWatchlistEntry.isEmpty()) {
-            throw new WatchlistException("No matching etnr found for this id or account.");
+            throw new WatchlistException("No matching entry found for this id or account.");
         }
         if (foundWatchlistEntry.get().isActive() == accountWatchlistModifyRequest.isActive()) {
             throw new WatchlistException("Cannot proceed. Entry is of the same status as the request.");
