@@ -1,6 +1,8 @@
 package my.fraud.demo;
 
 import my.fraud.demo.controller.WatchlistController;
+import my.fraud.demo.enums.AccountRiskLevel;
+import my.fraud.demo.model.Account;
 import my.fraud.demo.model.AccountWatchlistEntry;
 import my.fraud.demo.model.GetWatchlistEntryRequest;
 import my.fraud.demo.service.WatchlistService;
@@ -14,7 +16,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
 
-import static net.bytebuddy.matcher.ElementMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -39,7 +40,9 @@ public class WatchlistControllerTest {
 
     private final String MODIFY_MISSING_PROPER_IDENTIFICATION_BANK_CODE = "{ \"accountToModify\": { \"bankCode\": \"0100\"}, \"modifiedBy\": \"ext91619\", \"active\": \"false\" }";
 
-    private final String GET_NON_EXISTENT_ENTRY = "{ \"id\": \"WID00003\", \"accountToModify\": {}, \"active\": \"false\" }";
+    private final String GET_NON_EXISTENT_ENTRY = "{ \"id\": \"WID00003\", \"accountToModify\": {} }";
+
+    private final String GET_VALID_REQUEST = "{ \"account\": { \"accountNumber\": \"123\", \"bankCode\": \"0100\" } }";
 
 
     @Test
@@ -99,12 +102,36 @@ public class WatchlistControllerTest {
         Mockito.doReturn(potentialEntry).when(watchlistService).getWatchlistEntry(new GetWatchlistEntryRequest());
 
         mockMvc.perform(
-                get("/api/fraud/watchlist/get")
+                post("/api/fraud/watchlist/get")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(GET_NON_EXISTENT_ENTRY)
         )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("No matching entry found for this id or account."));
+    }
+
+    @Test
+    void returnWatchlistEntryWhenValidRequest() throws Exception{
+        Account accountOnWatch = new Account();
+        accountOnWatch.setAccountNumber("123");
+        accountOnWatch.setBankCode("0100");
+        AccountWatchlistEntry entry = new AccountWatchlistEntry(accountOnWatch, AccountRiskLevel.LOW);
+        entry.setId("WID00001");
+        Optional<AccountWatchlistEntry> potentialEntry = Optional.of(entry);
+
+        Mockito.when(watchlistService.getWatchlistEntry(Mockito.any(GetWatchlistEntryRequest.class)))
+                .thenReturn(potentialEntry);
+
+        mockMvc.perform(
+                post("/api/fraud/watchlist/get")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(GET_VALID_REQUEST)
+        )
+                .andExpect(status().is(200))
+                .andExpect(jsonPath("$.accountOnWatch.accountNumber").value("123"))
+                .andExpect(jsonPath("$.accountOnWatch.bankCode").value("0100"))
+                .andExpect(jsonPath("$.accountRiskLevel").value("LOW"));
+
     }
 
 }

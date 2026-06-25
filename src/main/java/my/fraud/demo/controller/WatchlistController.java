@@ -3,7 +3,6 @@ package my.fraud.demo.controller;
 import lombok.extern.slf4j.Slf4j;
 import my.fraud.demo.model.*;
 import my.fraud.demo.service.WatchlistService;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -62,7 +61,7 @@ public class WatchlistController {
 
     }
 
-    @GetMapping("/api/fraud/watchlist/get")
+    @PostMapping("/api/fraud/watchlist/get")
     public AccountWatchlistEntry getWatchlistEntry(@RequestBody GetWatchlistEntryRequest getWatchlistEntryRequest) throws WatchlistException {
         log.info("Volání watchlist get s {}", getWatchlistEntryRequest);
         Optional<AccountWatchlistEntry> foundWatchlistEntry = watchlistService.getWatchlistEntry(getWatchlistEntryRequest);
