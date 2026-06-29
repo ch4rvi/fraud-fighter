@@ -16,7 +16,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,6 +36,15 @@ public class WatchlistControllerTest {
     private final String MODIFY_MISSING_MODIFIED_BY = "{ \"id\": \"WID00001\", \"accountToModify\": {}, \"active\": \"false\" }";
 
     private final String MODIFY_MISSING_PROPER_IDENTIFICATION_ACCOUNT_NUMBER = "{ \"accountToModify\": { \"accountNumber\": \"123\"}, \"modifiedBy\": \"ext91619\", \"active\": \"false\" }";
+
+    private final String MODIFY_VALID_REQUEST_WITH_ID = "{ \"id\": \"WID00001\", \"modifiedBy\": \"ext91619\", \"active\": \"true\" }";
+
+    private final String MODIFY_VALID_REQUEST_WITH_ACCOUNT = "{ \"accountToModify\": { \"accountNumber\": \"123\", \"bankCode\": \"0100\" }, \"modifiedBy\": \"ext91619\", \"active\": \"true\" }";
+
+    private final String MODIFY_NO_MATCHING_ENTRY_FOUND_WITH_ID = "{ \"id\": \"WID00001\", \"modifiedBy\": \"ext91619\", \"active\": \"true\" }";
+    private final String MODIFY_NO_MATCHING_ENTRY_FOUND_WITH_ACCOUNT = "{ \"accountToModify\": { \"accountNumber\": \"123\", \"bankCode\": \"0100\" }, \"modifiedBy\": \"ext91619\", \"active\": \"true\" }";
+
+    private final String MODIFY_SAME_STATE_WITH_ID = "{ \"id\": \"WID00001\", \"modifiedBy\": \"ext91619\", \"active\": \"true\" }";
 
     private final String MODIFY_MISSING_PROPER_IDENTIFICATION_BANK_CODE = "{ \"accountToModify\": { \"bankCode\": \"0100\"}, \"modifiedBy\": \"ext91619\", \"active\": \"false\" }";
 
@@ -97,14 +105,118 @@ public class WatchlistControllerTest {
     }
 
     @Test
+    void return200WhenModifyingWithValidIdRequest() throws Exception {
+
+        AccountWatchlistEntry accountWatchlistEntry = new AccountWatchlistEntry(new Account(), AccountRiskLevel.LOW);
+        accountWatchlistEntry.setId("WID0001");
+        accountWatchlistEntry.setModifiedBy("ext91619");
+        accountWatchlistEntry.setActive(false);
+
+        Optional<AccountWatchlistEntry> potentialEntry = Optional.of(accountWatchlistEntry);
+
+
+        Mockito.when(watchlistService.getWatchlistEntry(Mockito.any(GetWatchlistEntryRequest.class)))
+                        .thenReturn(potentialEntry);
+
+        mockMvc.perform(
+                post("/api/fraud/watchlist/modify")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(MODIFY_VALID_REQUEST_WITH_ID)
+        )
+                .andExpect(status().is(200));
+    }
+
+    @Test
+    void return200WhenModifyingWithValidAccountRequest() throws Exception {
+
+        Account account = new Account();
+        account.setAccountNumber("123");
+        account.setBankCode("0100");
+        AccountWatchlistEntry entry = new AccountWatchlistEntry(account, AccountRiskLevel.LOW);
+        entry.setActive(false);
+
+        Optional<AccountWatchlistEntry> potentialEntry = Optional.of(entry);
+
+        Mockito.when(watchlistService.getWatchlistEntry(Mockito.any(GetWatchlistEntryRequest.class)))
+                        .thenReturn(potentialEntry);
+
+        mockMvc.perform(
+                post("/api/fraud/watchlist/modify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(MODIFY_VALID_REQUEST_WITH_ACCOUNT)
+        )
+                .andExpect(status().is(200));
+    }
+
+    @Test
+    void returnNoMatchingEntryWhenRequestedNotOnWatchlist() throws Exception {
+        Optional<AccountWatchlistEntry> potentialEntry = Optional.empty();
+
+        Mockito.when(watchlistService.getWatchlistEntry(Mockito.any(GetWatchlistEntryRequest.class)))
+                        .thenReturn(potentialEntry);
+
+        mockMvc.perform(
+                post("/api/fraud/watchlist/modify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(MODIFY_NO_MATCHING_ENTRY_FOUND_WITH_ID)
+        )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("No matching entry found for this id or account."));
+    }
+
+    @Test
+    void returnBadRequestWhenModifiedEntryOfSameStateWithId() throws Exception {
+        AccountWatchlistEntry entry = new AccountWatchlistEntry(new Account(), AccountRiskLevel.LOW);
+        entry.setId("WID00001");
+        entry.setActive(true);
+
+        Optional<AccountWatchlistEntry> potentialEntry = Optional.of(entry);
+
+        Mockito.when(watchlistService.getWatchlistEntry(Mockito.any(GetWatchlistEntryRequest.class)))
+                        .thenReturn(potentialEntry);
+
+        mockMvc.perform(
+                post("/api/fraud/watchlist/modify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(MODIFY_SAME_STATE_WITH_ID)
+        )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Cannot proceed. Entry is of the same status as the request."));
+    }
+
+    @Test
+    void returnBadRequestWhenModifiedEntryOfSameStateWithAccount() throws Exception {
+
+        Account account = new Account();
+        account.setAccountNumber("123");
+        account.setBankCode("0100");
+        AccountWatchlistEntry entry = new AccountWatchlistEntry(account, AccountRiskLevel.LOW);
+        entry.setActive(true);
+
+        Optional<AccountWatchlistEntry> potentialEntry = Optional.of(entry);
+
+        Mockito.when(watchlistService.getWatchlistEntry(Mockito.any(GetWatchlistEntryRequest.class)))
+                        .thenReturn(potentialEntry);
+
+        mockMvc.perform(
+                post("/api/fraud/watchlist/modify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(MODIFY_NO_MATCHING_ENTRY_FOUND_WITH_ACCOUNT)
+        )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Cannot proceed. Entry is of the same status as the request."));
+
+    }
+
+    @Test
     void returnBadRequestWhenModifyingNonExistentEntry() throws Exception {
         Optional<AccountWatchlistEntry> potentialEntry = Optional.empty();
         Mockito.doReturn(potentialEntry).when(watchlistService).getWatchlistEntry(new GetWatchlistEntryRequest());
 
         mockMvc.perform(
                 post("/api/fraud/watchlist/get")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(GET_NON_EXISTENT_ENTRY)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(GET_NON_EXISTENT_ENTRY)
         )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("No matching entry found for this id or account."));
