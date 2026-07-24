@@ -13,4 +13,5 @@ public class TransactionHistoryEntry {
     String currency;
     TransactionSource source;
     Date createdAt;
+    String transactionId;
 }
