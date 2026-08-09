@@ -7,7 +7,7 @@ import my.fraud.demo.enums.TransactionSource;
 public class SendTransactionRequest {
     Account debtorAccount;
     Account creditorAccount;
-    String amount;
+    Integer amount;
     String currency;
     TransactionSource source;
 }

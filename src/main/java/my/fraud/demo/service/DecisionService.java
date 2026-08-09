@@ -7,6 +7,4 @@ public interface DecisionService {
 
     Decision getDecision(DecisionSubjectEvent decisionSubjectEvent);
 
-
-
 }

@@ -13,7 +13,7 @@ import java.util.Set;
 public class DecisionController {
 
     public DecisionService decisionService;
-    private final Set<String> ALLOWED_SOURCES = Set.of("branch", "atm", "george");
+    private final Set<String> ALLOWED_SOURCES = Set.of("branch", "atm", "ib");
 
     public DecisionController(DecisionService decisionService) {
             this.decisionService = decisionService;

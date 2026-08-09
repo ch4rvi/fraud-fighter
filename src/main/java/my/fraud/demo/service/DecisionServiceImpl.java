@@ -6,8 +6,9 @@ import my.fraud.demo.enums.DecisionAction;
 import my.fraud.demo.model.*;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+
 
 
 @Slf4j
@@ -15,9 +16,11 @@ import java.util.Optional;
 public class DecisionServiceImpl implements DecisionService {
 
     private WatchlistService watchlistService;
+    private TransactionHistoryService transactionHistoryService;
 
-    public DecisionServiceImpl(WatchlistService watchlistService) {
+    public DecisionServiceImpl(WatchlistService watchlistService, TransactionHistoryService transactionHistoryService) {
         this.watchlistService = watchlistService;
+        this.transactionHistoryService = transactionHistoryService;
     }
 
     private final Integer AMOUNT_TRESHOLD_TO_HOLD = 100000;
@@ -38,12 +41,14 @@ public class DecisionServiceImpl implements DecisionService {
     private Decision makeDecision(DecisionSubjectEvent decisionSubjectEvent, Decision decision) throws DecisionException{
         if (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.ALLOW
                 && getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.ALLOW
-                && getDecisionActionForAccount(decisionSubjectEvent, watchlistService.getAccountWatchlist()) == DecisionAction.ALLOW) {
+                && getDecisionActionForAccount(decisionSubjectEvent, watchlistService.getAccountWatchlist()) == DecisionAction.ALLOW
+                && getDecisionActionForVelocityRule(decisionSubjectEvent, transactionHistoryService.getTransactionHistory()) == DecisionAction.ALLOW) {
             decision.setDecisionAction(DecisionAction.ALLOW);
         }
         if (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.HOLD
                 || getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.HOLD
-                || getDecisionActionForAccount(decisionSubjectEvent, watchlistService.getAccountWatchlist()) == DecisionAction.HOLD) {
+                || getDecisionActionForAccount(decisionSubjectEvent, watchlistService.getAccountWatchlist()) == DecisionAction.HOLD
+        || getDecisionActionForVelocityRule(decisionSubjectEvent, transactionHistoryService.getTransactionHistory()) == DecisionAction.HOLD) {
             decision.setDecisionAction(DecisionAction.HOLD);
         }
         if (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.DENY
@@ -74,7 +79,7 @@ public class DecisionServiceImpl implements DecisionService {
     }
 
     private DecisionAction getDecisionActionForSource(DecisionSubjectEvent decisionSubjectEvent) throws DecisionException{
-        if (decisionSubjectEvent.getSource().equalsIgnoreCase("george")) {
+        if (decisionSubjectEvent.getSource().equalsIgnoreCase("ib")) {
             return DecisionAction.ALLOW;
         }
         if (decisionSubjectEvent.getSource().equalsIgnoreCase("branch")) {
@@ -128,5 +133,53 @@ public class DecisionServiceImpl implements DecisionService {
             decisionText += " Warning: Pro přesnější rozhodnutí poskytněte typ operace.";
         }
         return decisionText;
+    }
+
+    private DecisionAction getDecisionActionForVelocityRule(DecisionSubjectEvent decisionSubjectEvent, List<TransactionHistoryEntry> transactionHistory) {
+        List<TransactionHistoryEntry> accountTransactionHistory = filterTransactionHistoryForAccount(transactionHistory, decisionSubjectEvent.getDebtorAccount());
+        if (catchThreeHitsInTenSecondsCriteria(accountTransactionHistory)) {
+            log.info("Velocity rule result HOLD");
+            return DecisionAction.HOLD;
+        } else {
+            log.info("Velocity rule result ALLOW");
+            return DecisionAction.ALLOW;
+        }
+    }
+
+    private boolean catchThreeHitsInTenSecondsCriteria(List<TransactionHistoryEntry> accountTransactionHistory) {
+        if (accountTransactionHistory.size() < 3) {
+            log.info("Transakční historie neobsahuje dostatečný počet transakcí pro velocity rule. Aktuální počet: {}", accountTransactionHistory.size());
+            return false;
+        }
+        Collections.sort(accountTransactionHistory, Comparator.comparing(entry -> entry.getCreatedAt()));
+        log.info("Transakční historie seřazena dle data {}", accountTransactionHistory);
+        List<TransactionHistoryEntry> lastThree = getLastThreeTransactionHistoryEntries(accountTransactionHistory);
+        log.info("Záznam relevantní pro velocity rule {}", lastThree);
+
+        return secondsCountDividingLastThreeEntries(lastThree) < 1000 * 10;
+    }
+
+    private long secondsCountDividingLastThreeEntries(List<TransactionHistoryEntry> accountTransactionHistory) {
+        return accountTransactionHistory.get(0).getCreatedAt().getTime() - accountTransactionHistory.get(2).getCreatedAt().getTime();
+    }
+
+    private List<TransactionHistoryEntry> getLastThreeTransactionHistoryEntries(List<TransactionHistoryEntry> transactionHistory) {
+        List<TransactionHistoryEntry> lastThreeTransactionHistoryEntries = new ArrayList<>();
+        for (int i = transactionHistory.size() - 3; i < transactionHistory.size(); i++) {
+            lastThreeTransactionHistoryEntries.add(transactionHistory.get(i));
+        }
+        return lastThreeTransactionHistoryEntries;
+    }
+
+    private List<TransactionHistoryEntry> filterTransactionHistoryForAccount(List<TransactionHistoryEntry> transactionHistory, Account account) {
+        return transactionHistory
+                .stream()
+                .filter(entry -> isMatchingAccount(entry, account))
+                .collect(Collectors.toList());
+    }
+
+    private boolean isMatchingAccount(TransactionHistoryEntry entry, Account debtorAccount) {
+        return entry.getDebtorAccount().getAccountNumber().equals(debtorAccount.getAccountNumber())
+                && entry.getDebtorAccount().getBankCode().equals(debtorAccount.getBankCode());
     }
 }

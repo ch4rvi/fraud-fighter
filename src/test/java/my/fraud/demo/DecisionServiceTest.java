@@ -8,6 +8,7 @@ import my.fraud.demo.model.Decision;
 import my.fraud.demo.model.DecisionSubjectEvent;
 import my.fraud.demo.service.DecisionService;
 import my.fraud.demo.service.DecisionServiceImpl;
+import my.fraud.demo.service.TransactionService;
 import my.fraud.demo.service.WatchlistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,18 +28,19 @@ public class DecisionServiceTest {
 
     @Mock
     WatchlistService watchlistService;
+    TransactionService transactionService;
 
     private DecisionService decisionService;
 
     @BeforeEach
     void setUp() {
-        decisionService = new DecisionServiceImpl(watchlistService);
+        decisionService = new DecisionServiceImpl(watchlistService, transactionService);
     }
 
     @Test
-    void getDecisionReturnsAllowWhenSourceGeorgeTest() {
+    void getDecisionReturnsAllowWhenSourceIBTest() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setSource("IB");
         decisionSubjectEvent.setAmount(0);
         Account debtorAccount = new Account();
         debtorAccount.setAccountNumber("111");
@@ -84,7 +86,7 @@ public class DecisionServiceTest {
     @Test
     void getDecisionReturnsAllowWhenAmountUnderHoldTresholdTest() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setSource("IB");
         decisionSubjectEvent.setAmount(99999);
         Account debtorAccount = new Account();
         debtorAccount.setAccountNumber("111");
@@ -99,7 +101,7 @@ public class DecisionServiceTest {
     @Test
     void getDecisionReturnsHoldWhenAmountUnderDenyTresholdTest() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setSource("IB");
         decisionSubjectEvent.setAmount(199999);
         Account debtorAccount = new Account();
         debtorAccount.setAccountNumber("111");
@@ -114,7 +116,7 @@ public class DecisionServiceTest {
     @Test
     void getDecisionReturnsDenyWhenAmountOverDenyTresholdTest() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setSource("IB");
         decisionSubjectEvent.setAmount(201000);
         Account debtorAccount = new Account();
         debtorAccount.setAccountNumber("111");
@@ -129,7 +131,7 @@ public class DecisionServiceTest {
     @Test
     void getDecisionReturnsAllowWhenAccountNotOnWatchlist() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setSource("IB");
         decisionSubjectEvent.setAmount(1);
         Account debtorAccount = new Account();
         debtorAccount.setAccountNumber("111");
@@ -144,7 +146,7 @@ public class DecisionServiceTest {
     @Test
     void getDecisionReturnsAllowWhenAccountOnWatchlistLowRisk() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setSource("IB");
         decisionSubjectEvent.setAmount(1);
         Account debtorAccount = new Account();
         debtorAccount.setAccountNumber("123");
@@ -159,7 +161,7 @@ public class DecisionServiceTest {
     @Test
     void getDecisionReturnsHoldWhenAccountOnWatchlistMediumRisk() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setSource("IB");
         decisionSubjectEvent.setAmount(1);
         Account debtorAccount = new Account();
         debtorAccount.setAccountNumber("456");
@@ -184,7 +186,7 @@ public class DecisionServiceTest {
     @Test
     void getDecisionReturnsDenyWhenAccountOnWatchlistHighRisk() {
         DecisionSubjectEvent decisionSubjectEvent = new DecisionSubjectEvent();
-        decisionSubjectEvent.setSource("George");
+        decisionSubjectEvent.setSource("IB");
         decisionSubjectEvent.setAmount(1);
         Account debtorAccount = new Account();
         debtorAccount.setAccountNumber("789");

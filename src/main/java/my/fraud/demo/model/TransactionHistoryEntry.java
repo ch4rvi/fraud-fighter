@@ -7,11 +7,11 @@ import java.util.Date;
 
 @Data
 public class TransactionHistoryEntry {
-    Account debtorAccount;
-    Account creditorAccount;
-    String amount;
-    String currency;
-    TransactionSource source;
-    Date createdAt;
-    String transactionId;
+    public Account debtorAccount;
+    public Account creditorAccount;
+    public Integer amount;
+    public String currency;
+    public TransactionSource source;
+    public Date createdAt;
+    public String transactionId;
 }
