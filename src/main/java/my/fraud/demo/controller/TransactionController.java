@@ -1,5 +1,6 @@
 package my.fraud.demo.controller;
 
+import my.fraud.demo.model.Decision;
 import my.fraud.demo.model.SendTransactionRequest;
 import my.fraud.demo.service.TransactionService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,8 +17,8 @@ public class TransactionController {
     } ;
 
     @PostMapping("/api/fraud/transaction")
-    void send(@RequestBody SendTransactionRequest sendTransactionRequest) {
-        transactionService.send(sendTransactionRequest);
+    public Decision send(@RequestBody SendTransactionRequest sendTransactionRequest) {
+        return transactionService.send(sendTransactionRequest);
     }
 
 }

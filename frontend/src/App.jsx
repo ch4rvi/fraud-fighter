@@ -2,12 +2,13 @@ import { useState } from 'react'
 import './App.css'
 
 function App() {
-  const [debtorAccountNumber, setDebtorAccountNumber] = useState("")
-  const [debtorBankCode, setDebtorBankCode] = useState("")
-  const [creditorAccountNumber, setCreditorAccountNumber] = useState("")
-  const [creditorBankCode, setCreditorBankCode] = useState("")
-  const [currency, setCurrency] = useState("")
-  const [amount, setAmount] = useState("")
+  const [debtorAccountNumber, setDebtorAccountNumber] = useState("123")
+  const [debtorBankCode, setDebtorBankCode] = useState("100")
+  const [creditorAccountNumber, setCreditorAccountNumber] = useState("234")
+  const [creditorBankCode, setCreditorBankCode] = useState("100")
+  const [currency, setCurrency] = useState("CZK")
+  const [amount, setAmount] = useState("1")
+  const [decisionResponse, setDecisionResponse] = useState("")
 
   const sendTransactionRequest = {
     "debtorAccount": {
@@ -23,8 +24,8 @@ function App() {
     "source": "IB"
   }
 
-  const sendTransaction = () => {
-    fetch(
+  const sendTransaction = async () => {
+    let response = await fetch(
         "http://localhost:8080/api/fraud/transaction",
         {
           "method": "POST",
@@ -32,6 +33,12 @@ function App() {
           "body": JSON.stringify(sendTransactionRequest)
         }
     );
+    const sendTransactionResponse = await response.json();
+    if (sendTransactionResponse == null) {
+      console.log("Decision is probably empty!");
+    } else {
+      console.log(setDecisionResponse(sendTransactionResponse.decisionAction));
+    }
   }
 
   return (
@@ -77,6 +84,8 @@ function App() {
         <p>Vepsaná hodnota je {creditorBankCode}</p>
         <p>Vepsaná hodnota je {currency}</p>
         <p>Vepsaná hodnota je {amount}</p>
+
+        <h3>Výsledek je {decisionResponse}</h3>
 
       </section>
     </>

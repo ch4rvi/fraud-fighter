@@ -20,7 +20,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public void send(SendTransactionRequest sendTransactionRequest) {
+    public Decision send(SendTransactionRequest sendTransactionRequest) {
 
         DecisionSubjectEvent decisionSubjectEvent = createDecisionSubjectEventFromSendTransaction(sendTransactionRequest);
         Decision decision = decisionService.getDecision(decisionSubjectEvent);
@@ -31,6 +31,7 @@ public class TransactionServiceImpl implements TransactionService {
         } else {
             log.info("Payment NOK. Saving to transaction history denied: {}", sendTransactionRequest);
         }
+        return decision;
     }
 
     private DecisionSubjectEvent createDecisionSubjectEventFromSendTransaction(SendTransactionRequest sendTransactionRequest) {
