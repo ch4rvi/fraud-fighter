@@ -39,6 +39,7 @@ public class DecisionServiceImpl implements DecisionService {
     }
 
     private Decision makeDecision(DecisionSubjectEvent decisionSubjectEvent, Decision decision) throws DecisionException{
+        List<String> triggeredRules = new ArrayList<>();
         if (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.ALLOW
                 && getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.ALLOW
                 && getDecisionActionForAccount(decisionSubjectEvent, watchlistService.getAccountWatchlist()) == DecisionAction.ALLOW
@@ -50,6 +51,9 @@ public class DecisionServiceImpl implements DecisionService {
                 || getDecisionActionForAccount(decisionSubjectEvent, watchlistService.getAccountWatchlist()) == DecisionAction.HOLD
         || getDecisionActionForVelocityRule(decisionSubjectEvent, transactionHistoryService.getTransactionHistory()) == DecisionAction.HOLD) {
             decision.setDecisionAction(DecisionAction.HOLD);
+            if (getDecisionActionForVelocityRule(decisionSubjectEvent, transactionHistoryService.getTransactionHistory()) == DecisionAction.HOLD) {
+                triggeredRules.add("transactionHistoryVelocityRule");
+            }
         }
         if (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.DENY
                 || getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.DENY
@@ -60,6 +64,7 @@ public class DecisionServiceImpl implements DecisionService {
         }
 
         decision.setDecisionText(createDecisionText(decisionSubjectEvent, decision));
+        decision.setTriggeredRules(triggeredRules);
 
         log.info("Výsledek rozhodnutí {} s komentářem '{}'", decision.getDecisionAction(), decision.getDecisionText());
         return decision;
