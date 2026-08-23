@@ -9,7 +9,7 @@ function App() {
   const [currency, setCurrency] = useState("CZK")
   const [amount, setAmount] = useState("1")
   const [decisionResponse, setDecisionResponse] = useState("")
-  const [triggeredRule, setTriggeredRule] = useState("")
+  const [triggeredRules, setTriggeredRules] = useState([])
 
   const sendTransactionRequest = {
     "debtorAccount": {
@@ -41,7 +41,7 @@ function App() {
     } else {
       console.log(sendTransactionResponse)
       console.log(setDecisionResponse(sendTransactionResponse.decisionAction));
-      console.log(setTriggeredRule(sendTransactionResponse && sendTransactionResponse.triggeredRules[0] ? sendTransactionResponse.triggeredRules[0] : ""));
+      console.log(setTriggeredRules(sendTransactionResponse && sendTransactionResponse.triggeredRules ? sendTransactionResponse.triggeredRules : null));
       sendTransactionResponse = null;
     }
   }
@@ -91,7 +91,7 @@ function App() {
         <p>Vepsaná hodnota je {amount}</p>
 
         <h3>Výsledek je {decisionResponse}</h3>
-        <h3>Triggované pravidlo je {triggeredRule}</h3>
+        <h3>Triggovaná pravidla je {triggeredRules}</h3>
 
       </section>
     </>

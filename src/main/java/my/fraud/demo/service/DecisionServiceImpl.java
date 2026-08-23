@@ -3,6 +3,7 @@ package my.fraud.demo.service;
 import lombok.extern.slf4j.Slf4j;
 import my.fraud.demo.enums.AccountRiskLevel;
 import my.fraud.demo.enums.DecisionAction;
+import my.fraud.demo.enums.Rule;
 import my.fraud.demo.model.*;
 import org.springframework.stereotype.Service;
 
@@ -39,64 +40,95 @@ public class DecisionServiceImpl implements DecisionService {
     }
 
     private Decision makeDecision(DecisionSubjectEvent decisionSubjectEvent, Decision decision) throws DecisionException{
-        List<String> triggeredRules = new ArrayList<>();
-        if (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.ALLOW
-                && getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.ALLOW
-                && getDecisionActionForAccount(decisionSubjectEvent, watchlistService.getAccountWatchlist()) == DecisionAction.ALLOW
-                && getDecisionActionForVelocityRule(decisionSubjectEvent, transactionHistoryService.getTransactionHistory()) == DecisionAction.ALLOW) {
-            decision.setDecisionAction(DecisionAction.ALLOW);
-        }
-        if (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.HOLD
-                || getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.HOLD
-                || getDecisionActionForAccount(decisionSubjectEvent, watchlistService.getAccountWatchlist()) == DecisionAction.HOLD
-        || getDecisionActionForVelocityRule(decisionSubjectEvent, transactionHistoryService.getTransactionHistory()) == DecisionAction.HOLD) {
-            decision.setDecisionAction(DecisionAction.HOLD);
-            if (getDecisionActionForVelocityRule(decisionSubjectEvent, transactionHistoryService.getTransactionHistory()) == DecisionAction.HOLD) {
-                triggeredRules.add("transactionHistoryVelocityRule");
-            }
-        }
-        if (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.DENY
-                || getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.DENY
-                || getDecisionActionForAccount(decisionSubjectEvent, watchlistService.getAccountWatchlist()) == DecisionAction.DENY
-                || (getDecisionActionForSource(decisionSubjectEvent) == DecisionAction.HOLD
-                && getDecisionActionForAmount(decisionSubjectEvent) == DecisionAction.HOLD)) {
-            decision.setDecisionAction(DecisionAction.DENY);
-        }
+
+        List<RuleDecisionResult> ruleDecisionResults = getResultForEachRule(decisionSubjectEvent);
+        log.info("Výsledky jednotlivých pravidel: {}", ruleDecisionResults);
+
+        setHighestDecisionAction(decision, ruleDecisionResults);
+        log.info("Výsledná DecisionAction {}", decision.getDecisionAction());
 
         decision.setDecisionText(createDecisionText(decisionSubjectEvent, decision));
-        decision.setTriggeredRules(triggeredRules);
+
+        decision.setTriggeredRules(collectTriggeredRules(ruleDecisionResults));
+        log.info("Kolekce triggrovaných pravidel {}", decision.getTriggeredRules());
 
         log.info("Výsledek rozhodnutí {} s komentářem '{}'", decision.getDecisionAction(), decision.getDecisionText());
         return decision;
     }
 
-    private DecisionAction getDecisionActionForAmount(DecisionSubjectEvent decisionSubjectEvent) throws DecisionException{
+    private void setHighestDecisionAction(Decision decision, List<RuleDecisionResult> ruleDecisionResults) {
+        decision.setDecisionAction(DecisionAction.ALLOW);
+        selectHighestLevelDecisionAction(decision, ruleDecisionResults);
+    }
+
+    private List<RuleDecisionResult> getResultForEachRule( DecisionSubjectEvent decisionSubjectEvent) throws DecisionException{
+        List<RuleDecisionResult> ruleDecisionResults = new ArrayList<>();
+        ruleDecisionResults.add(getDecisionActionForSource(decisionSubjectEvent));
+        ruleDecisionResults.add(getDecisionActionForAmount(decisionSubjectEvent));
+        ruleDecisionResults.add(getDecisionActionForAccount(decisionSubjectEvent, watchlistService.getAccountWatchlist()));
+        ruleDecisionResults.add(getDecisionActionForVelocityRule(decisionSubjectEvent, transactionHistoryService.getTransactionHistory()));
+
+        return ruleDecisionResults;
+    }
+
+    private List<Rule> collectTriggeredRules(List<RuleDecisionResult> ruleDecisionResults) {
+        return ruleDecisionResults
+                .stream()
+                .filter(result -> result.getRuleAction() != DecisionAction.ALLOW)
+                .map(RuleDecisionResult::getRuleName)
+                .collect(Collectors.toList());
+    }
+
+    private void selectHighestLevelDecisionAction(Decision decision, List<RuleDecisionResult> ruleDecisionResults) {
+        ruleDecisionResults.forEach(result -> {
+            if (decision.getDecisionAction() == DecisionAction.ALLOW
+                    && result.getRuleAction() == DecisionAction.HOLD) {
+                decision.setDecisionAction(DecisionAction.HOLD);
+            }
+            if (decision.getDecisionAction() == DecisionAction.ALLOW
+                    && result.getRuleAction() == DecisionAction.DENY) {
+                decision.setDecisionAction(DecisionAction.DENY);
+            }
+            if (decision.getDecisionAction() == DecisionAction.HOLD
+                    && result.getRuleAction() == DecisionAction.DENY) {
+                decision.setDecisionAction(DecisionAction.DENY);
+            }
+        });
+    }
+
+    private RuleDecisionResult getDecisionActionForAmount(DecisionSubjectEvent decisionSubjectEvent) throws DecisionException{
+        RuleDecisionResult ruleDecisionResult = new RuleDecisionResult();
+        ruleDecisionResult.setRuleName(Rule.TRANSACTION_AMOUNT_RULE);
+
         if (decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_DENY) {
-            return DecisionAction.DENY;
+            ruleDecisionResult.setRuleAction(DecisionAction.DENY);
         }
         if (decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_HOLD) {
-            return DecisionAction.HOLD;
+            ruleDecisionResult.setRuleAction(DecisionAction.HOLD);
         }
         if (decisionSubjectEvent.getAmount() <= AMOUNT_TRESHOLD_TO_HOLD) {
-            return DecisionAction.ALLOW;
+            ruleDecisionResult.setRuleAction(DecisionAction.ALLOW);
         }
-        throw new DecisionException("Hodnotě amount neodpovídá žádná DecisionAction.");
+        return ruleDecisionResult;
     }
 
-    private DecisionAction getDecisionActionForSource(DecisionSubjectEvent decisionSubjectEvent) throws DecisionException{
+    private RuleDecisionResult getDecisionActionForSource(DecisionSubjectEvent decisionSubjectEvent){
+        RuleDecisionResult ruleDecisionResult = new RuleDecisionResult();
+        ruleDecisionResult.setRuleName(Rule.TRANSACTION_SOURCE_RULE);
+
         if (decisionSubjectEvent.getSource().equalsIgnoreCase("ib")) {
-            return DecisionAction.ALLOW;
+            ruleDecisionResult.setRuleAction(DecisionAction.ALLOW);
         }
         if (decisionSubjectEvent.getSource().equalsIgnoreCase("branch")) {
-            return DecisionAction.HOLD;
+            ruleDecisionResult.setRuleAction(DecisionAction.HOLD);
         }
         if (decisionSubjectEvent.getSource().equalsIgnoreCase("atm")) {
-            return DecisionAction.DENY;
+            ruleDecisionResult.setRuleAction(DecisionAction.DENY);
         }
-        throw new DecisionException("Hodnotě source neodpovídá žádná DecisionAction.");
+        return ruleDecisionResult;
     }
 
-    private DecisionAction getDecisionActionForAccount(DecisionSubjectEvent decisionSubjectEvent, List<AccountWatchlistEntry> accountWatchlist) throws DecisionException {
+    private RuleDecisionResult getDecisionActionForAccount(DecisionSubjectEvent decisionSubjectEvent, List<AccountWatchlistEntry> accountWatchlist) throws DecisionException {
         if (decisionSubjectEvent == null) {
             return null;
         }
@@ -105,11 +137,15 @@ public class DecisionServiceImpl implements DecisionService {
                 .filter(e -> isMatchingAccount(decisionSubjectEvent.getDebtorAccount(), e))
                 .findFirst();
 
+        RuleDecisionResult ruleDecisionResult = new RuleDecisionResult();
+        ruleDecisionResult.setRuleName(Rule.ACCOUNT_WATCHLIST_RULE);
+
         if (matchingWatchlistEntry.isPresent()) {
-            return getDecisionActionForRiskLevel(matchingWatchlistEntry.get());
+            ruleDecisionResult.setRuleAction(getDecisionActionForRiskLevel(matchingWatchlistEntry.get()));
         } else {
-            return DecisionAction.ALLOW;
+            ruleDecisionResult.setRuleAction(DecisionAction.ALLOW);
         }
+        return ruleDecisionResult;
     }
 
     private boolean isMatchingAccount(Account account, AccountWatchlistEntry accountWatchlistEntry) {
@@ -140,15 +176,20 @@ public class DecisionServiceImpl implements DecisionService {
         return decisionText;
     }
 
-    private DecisionAction getDecisionActionForVelocityRule(DecisionSubjectEvent decisionSubjectEvent, List<TransactionHistoryEntry> transactionHistory) {
+    private RuleDecisionResult getDecisionActionForVelocityRule(DecisionSubjectEvent decisionSubjectEvent, List<TransactionHistoryEntry> transactionHistory) {
         List<TransactionHistoryEntry> accountTransactionHistory = filterTransactionHistoryForAccount(transactionHistory, decisionSubjectEvent.getDebtorAccount());
+
+        RuleDecisionResult ruleDecisionResult = new RuleDecisionResult();
+        ruleDecisionResult.setRuleName(Rule.TRANSACTION_VELOCITY_RULE);
+
         if (catchThreeHitsInTenSecondsCriteria(accountTransactionHistory)) {
             log.info("Velocity rule result HOLD");
-            return DecisionAction.HOLD;
+            ruleDecisionResult.setRuleAction(DecisionAction.HOLD);
         } else {
             log.info("Velocity rule result ALLOW");
-            return DecisionAction.ALLOW;
+            ruleDecisionResult.setRuleAction(DecisionAction.ALLOW);
         }
+        return ruleDecisionResult;
     }
 
     private boolean catchThreeHitsInTenSecondsCriteria(List<TransactionHistoryEntry> accountTransactionHistory) {

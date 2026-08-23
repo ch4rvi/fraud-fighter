@@ -1,0 +1,8 @@
+package my.fraud.demo.enums;
+
+public enum Rule {
+    TRANSACTION_AMOUNT_RULE,
+    TRANSACTION_SOURCE_RULE,
+    TRANSACTION_VELOCITY_RULE,
+    ACCOUNT_WATCHLIST_RULE
+}
