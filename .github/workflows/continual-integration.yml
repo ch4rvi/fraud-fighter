@@ -1,0 +1,22 @@
+name: "Application Build Workflow"
+
+on:
+  "push":
+    branches:
+      - "master"
+
+jobs:
+  build:
+    runs-on: "macos-latest"
+
+    steps:
+
+      - name: "checkout to repo"
+        uses: "actions/checkout@v6"
+      - name: "setup java"
+        uses: "actions/setup-java@v6"
+        with:
+          java-version: '17'
+          distribution: "temurin"
+      - name: "run maven"
+        run: "mvn package"
