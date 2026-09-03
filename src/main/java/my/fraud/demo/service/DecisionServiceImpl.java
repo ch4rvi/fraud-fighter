@@ -103,7 +103,7 @@ public class DecisionServiceImpl implements DecisionService {
         if (decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_DENY) {
             ruleDecisionResult.setRuleAction(DecisionAction.DENY);
         }
-        if (decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_HOLD) {
+        if (decisionSubjectEvent.getAmount() > AMOUNT_TRESHOLD_TO_HOLD && decisionSubjectEvent.getAmount() <= AMOUNT_TRESHOLD_TO_DENY ) {
             ruleDecisionResult.setRuleAction(DecisionAction.HOLD);
         }
         if (decisionSubjectEvent.getAmount() <= AMOUNT_TRESHOLD_TO_HOLD) {

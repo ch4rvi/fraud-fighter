@@ -6,10 +6,7 @@ import my.fraud.demo.model.Account;
 import my.fraud.demo.model.AccountWatchlistEntry;
 import my.fraud.demo.model.Decision;
 import my.fraud.demo.model.DecisionSubjectEvent;
-import my.fraud.demo.service.DecisionService;
-import my.fraud.demo.service.DecisionServiceImpl;
-import my.fraud.demo.service.TransactionService;
-import my.fraud.demo.service.WatchlistService;
+import my.fraud.demo.service.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,13 +25,15 @@ public class DecisionServiceTest {
 
     @Mock
     WatchlistService watchlistService;
-    TransactionService transactionService;
+
+    @Mock
+    TransactionHistoryService transactionHistoryService;
 
     private DecisionService decisionService;
 
     @BeforeEach
     void setUp() {
-        decisionService = new DecisionServiceImpl(watchlistService, transactionService);
+        decisionService = new DecisionServiceImpl(watchlistService, transactionHistoryService);
     }
 
     @Test
